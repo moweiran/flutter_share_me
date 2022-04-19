@@ -51,11 +51,18 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
     final private static String _methodSystemShare = "system_share";
     final private static String _methodInstagramShare = "instagram_share";
     final private static String _methodTelegramShare = "telegram_share";
+    final private static String _methodEmailShare = "email_share";
 
 
     private Activity activity;
     private static CallbackManager callbackManager;
     private MethodChannel methodChannel;
+
+    private ArrayList<String> recipients;
+    private ArrayList<String> ccrecipients;
+    private ArrayList<String> bccrecipients;
+    private String subject;
+    private String body;
 
     /**
      * Plugin registration.
@@ -137,6 +144,13 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
                 msg = call.argument("msg");
                 shareToTelegram(msg, result);
                 break;
+            case _methodEmailShare:
+                recipients = call.argument("recipients");
+                ccrecipients = call.argument("ccrecipients");
+                bccrecipients = call.argument("bccrecipients");
+                body = call.argument("body");
+                subject = call.argument("subject");
+                shareEmail(recipients,ccrecipients,bccrecipients,subject,body,result);
             default:
                 result.notImplemented();
                 break;
@@ -364,6 +378,32 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
             }
         } else {
             result.error("Instagram not found", "Instagram is not installed on device.", "");
+        }
+    }
+
+    /**
+     * share on Email
+     *
+     * @param recipients ArrayList<String>
+     * @param ccrecipients ArrayList<String>
+     * @param bccrecipients ArrayList<String>
+     * @param subject    String
+     * @param body       String
+     * @param result     Result
+     */
+    private void shareEmail(ArrayList<String> recipients, ArrayList<String> ccrecipients,ArrayList<String> bccrecipients,String subject,String body,Result result){
+
+        Intent shareIntent = new Intent(Intent.ACTION_SENDTO, Uri.fromParts(
+                "mailto", "", null));
+        shareIntent.putExtra(Intent.EXTRA_SUBJECT, subject);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, body);
+        shareIntent.putExtra(Intent.EXTRA_EMAIL, recipients);
+        shareIntent.putExtra(Intent.EXTRA_CC, ccrecipients);
+        shareIntent.putExtra(Intent.EXTRA_BCC, bccrecipients);
+        try {
+            activity.startActivity(Intent.createChooser(shareIntent, "Send email using..."));
+        } catch (android.content.ActivityNotFoundException ex) {
+            result.success("Mail services are not available");
         }
     }
 

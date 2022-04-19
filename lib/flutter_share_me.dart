@@ -17,6 +17,7 @@ class FlutterShareMe {
   static const String _methodInstagramShare = 'instagram_share';
   static const String _methodSystemShare = 'system_share';
   static const String _methodTelegramShare = 'telegram_share';
+  static const String _methodEmailShare = 'email_share';
 
   ///share to WhatsApp
   /// [imagePath] is local image
@@ -118,19 +119,20 @@ class FlutterShareMe {
   }
 
   ///share to messenger
-  Future<String?> shareToMessenger({required String msg, String url = ''}) async {
+  Future<String?> shareToMessenger(
+      {required String msg, String url = ''}) async {
     final Map<String, dynamic> arguments = <String, dynamic>{};
     arguments.putIfAbsent('msg', () => msg);
     arguments.putIfAbsent('url', () => url);
     String? result;
     try {
-      result = await _channel.invokeMethod<String?>(_methodMessenger, arguments);
+      result =
+          await _channel.invokeMethod<String?>(_methodMessenger, arguments);
     } catch (e) {
       return e.toString();
     }
     return result;
   }
-
 
   ///share to twitter
   ///[msg] string that you want share.
@@ -174,6 +176,31 @@ class FlutterShareMe {
     try {
       result =
           await _channel.invokeMethod<String>(_methodInstagramShare, arguments);
+    } catch (e) {
+      return e.toString();
+    }
+    return result;
+  }
+
+  Future<String?> shareToEmail(
+      {List<String>? recipients,
+      List<String>? ccrecipients,
+      List<String>? bccrecipients,
+      String? subject,
+      String? body,
+      bool? isHTML}) async {
+    String? result;
+    final Map<String, dynamic> arguments = <String, dynamic>{
+      'recipients': recipients,
+      'subject': subject,
+      'ccrecipients': ccrecipients,
+      'bccrecipients': bccrecipients,
+      'body': body,
+      'isHTML': isHTML,
+    };
+    try {
+      result =
+          await _channel.invokeMethod<String>(_methodEmailShare, arguments);
     } catch (e) {
       return e.toString();
     }

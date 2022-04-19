@@ -1,7 +1,10 @@
 import Flutter
 import UIKit
 import FBSDKShareKit
+import FBSDKCoreKit
 import PhotosUI
+import MessageUI
+
 public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate {
     
     
@@ -14,6 +17,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
     let _methodInstagram = "instagram_share";
     let _methodSystemShare = "system_share";
     let _methodTelegramShare = "telegram_share";
+    let _methodEmail = "email_share";
     
     var result: FlutterResult?
     var documentInteractionController: UIDocumentInteractionController?
@@ -23,6 +27,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
         let channel = FlutterMethodChannel(name: "flutter_share_me", binaryMessenger: registrar.messenger())
         let instance = SwiftFlutterShareMePlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
+        registrar.addApplicationDelegate(instance)
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -78,6 +83,18 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
         else if(call.method.elementsEqual(_methodTelegramShare)){
             let args = call.arguments as? Dictionary<String,Any>
             shareToTelegram(message: args!["msg"] as! String, result: result )
+        }
+        else if (call.method.elementsEqual(_methodEmail)){
+            let args = call.arguments as? Dictionary<String,Any>
+            if let arguments = call.arguments as? [String:Any] {
+                let recipients = arguments["recipients"] as? [String] ?? []
+                let ccrecipients = arguments["ccrecipients"] as? [String] ?? []
+                let bccrecipients = arguments["bccrecipients"] as? [String] ?? []
+                let subject = arguments["subject"] as? String ?? ""
+                let body = arguments["body"] as? String ?? ""
+                let isHTML = arguments["isHTML"] as? Bool ?? false
+                sendEmail(withRecipient: recipients, withCcRecipient: ccrecipients, withBccRecipient: bccrecipients, withBody: body, withSubject: subject, withisHTML: isHTML)
+            }
         }
         else{
             let args = call.arguments as? Dictionary<String,Any>
@@ -348,6 +365,21 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
         }
     }
     
+    func sendEmail(withRecipient recipent: [String], withCcRecipient ccrecipent: [String],withBccRecipient bccrecipent: [String],withBody body: String, withSubject subject: String, withisHTML isHTML:Bool ) {
+        if MFMailComposeViewController.canSendMail() {
+            let mail = MFMailComposeViewController()
+            mail.mailComposeDelegate = self
+            mail.setSubject(subject)
+            mail.setMessageBody(body, isHTML: isHTML)
+            mail.setToRecipients(recipent)
+            mail.setCcRecipients(ccrecipent)
+            mail.setBccRecipients(bccrecipent)
+            UIApplication.shared.keyWindow?.rootViewController?.present(mail, animated: true, completion: nil)
+        } else {
+            self.result?("Mail services are not available")
+        }
+    }
+    
     //Facebook delegate methods
     public func sharer(_ sharer: Sharing, didCompleteWithResults results: [String : Any]) {
         print("Share: Success")
@@ -361,5 +393,12 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
     
     public func sharerDidCancel(_ sharer: Sharing) {
         print("Share: Cancel")
+    }
+}
+
+//MARK: MFMailComposeViewControllerDelegate
+extension SwiftFlutterShareMePlugin: MFMailComposeViewControllerDelegate{
+    public func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+        UIApplication.shared.keyWindow?.rootViewController?.dismiss(animated: true, completion: nil)
     }
 }
