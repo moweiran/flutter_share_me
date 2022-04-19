@@ -191,17 +191,20 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
     // @ map conting meesage and url
     
     func sharefacebook(message:Dictionary<String,Any>, result: @escaping FlutterResult)  {
-        // let viewController = UIApplication.shared.delegate?.window??.rootViewController
-        // //let shareDialog = ShareDialog()
-        // let shareContent = ShareLinkContent()
-        // shareContent.contentURL = URL.init(string: message["url"] as! String)!
-        // shareContent.quote = message["msg"] as? String
+        let viewController = UIApplication.shared.delegate?.window??.rootViewController
+        //let shareDialog = ShareDialog()
+        let shareContent = ShareLinkContent()
+        guard let url = URL(string: message["url"] as! String) else {
+            preconditionFailure("URL is invalid")
+        }
+
+        shareContent.contentURL = url
+        shareContent.quote = message["msg"] as? String
         
-        // let shareDialog = ShareDialog(viewController: viewController, content: shareContent, delegate: self)
-        // shareDialog.mode = .automatic
-        // shareDialog.show()
-        // result("Sucess")
-        
+        let shareDialog = ShareDialog(viewController: viewController, content: shareContent, delegate: self)
+        shareDialog.mode = .automatic
+        shareDialog.show()
+        result("Sucess")
     }
     
     // share messenger
