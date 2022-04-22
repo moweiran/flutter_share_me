@@ -74,7 +74,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
         }
         else if(call.method.elementsEqual(_methodTwitter)){
             let args = call.arguments as? Dictionary<String,Any>
-            shareTwitter(message: args!["msg"] as! String, url: args!["url"] as! String, result: result)
+            shareTwitter(message: args!["msg"] as! String, urlParam: args!["url"] as! String, result: result)
         }
         else if(call.method.elementsEqual(_methodInstagram)){
             let args = call.arguments as? Dictionary<String,Any>
@@ -250,8 +250,8 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
     // share twitter params
     // @ message
     // @ url
-    func shareTwitter(message:String,url:String, result: @escaping FlutterResult)  {
-        let urlstring = url
+    func shareTwitter(message:String,urlParam:String, result: @escaping FlutterResult)  {
+        let urlstring = urlParam
         let twitterUrl =  "twitter://post?message=\(message)"
         
         let urlTextEscaped = urlstring.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed)
