@@ -203,7 +203,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
             result(FlutterError(code: "Not found", message: "WhatsAppBusiness is not found", details: "WhatsAppBusiness not intalled or Check url scheme."));
         }
     }
-    // share twitter
+    // share facebook
     // params
     // @ map conting meesage and url
     
@@ -257,7 +257,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
         let urlTextEscaped = urlstring.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed)
         let url = URL(string: urlTextEscaped ?? "")
         
-        let urlWithLink = twitterUrl + url!.absoluteString
+        let urlWithLink = twitterUrl + + (url == nil ? "" : url!.absoluteString)
         
         let escapedShareString = urlWithLink.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!
         // cast to an url
