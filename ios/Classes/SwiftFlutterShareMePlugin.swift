@@ -257,7 +257,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
         let urlTextEscaped = urlstring.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed)
         let url = URL(string: urlTextEscaped ?? "")
         
-        let urlWithLink = twitterUrl + + (url == nil ? "" : url!.absoluteString)
+        let urlWithLink = twitterUrl + url?.absoluteString ?? ""
         
         let escapedShareString = urlWithLink.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!
         // cast to an url
