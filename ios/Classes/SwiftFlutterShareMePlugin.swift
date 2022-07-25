@@ -5,12 +5,10 @@ import FBSDKCoreKit
 import PhotosUI
 import MessageUI
 
-public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate {
+public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
     
     
     let _methodWhatsApp = "whatsapp_share";
-    let _methodWhatsAppPersonal = "whatsapp_personal";
-    let _methodWhatsAppBusiness = "whatsapp_business_share";
     let _methodFaceBook = "facebook_share";
     let _methodMessenger = "messenger_share";
     let _methodTwitter = "twitter_share";
@@ -18,6 +16,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
     let _methodSystemShare = "system_share";
     let _methodTelegramShare = "telegram_share";
     let _methodEmail = "email_share";
+    let _methodSMSShare = "sms_share";
     
     var result: FlutterResult?
     var documentInteractionController: UIDocumentInteractionController?
@@ -44,26 +43,6 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
             }
             
         }
-        else if(call.method.elementsEqual(_methodWhatsAppBusiness)){
-            
-            // There is no way to open WB in IOS.
-            result(FlutterMethodNotImplemented)
-            
-            //            let args = call.arguments as? Dictionary<String,Any>
-            //
-            //            if args!["url"]as! String == "" {
-            //                // if don't pass url then pass blank so if can strat normal whatsapp
-            //                shareWhatsApp4Biz(message: args!["msg"] as! String, result: result)
-            //            }else{
-            //                // if user pass url then use that
-            //                // wil open share sheet and user can select open for there.
-            //                //                shareWhatsApp(message: args!["msg"] as! String,imageUrl: args!["url"] as! String,result: result)
-            //            }
-        }
-        else if(call.method.elementsEqual(_methodWhatsAppPersonal)){
-            let args = call.arguments as? Dictionary<String,Any>
-            shareWhatsAppPersonal(message: args!["msg"]as! String, phoneNumber: args!["phoneNumber"]as! String, result: result)
-        }
         else if(call.method.elementsEqual(_methodFaceBook)){
             let args = call.arguments as? Dictionary<String,Any>
             sharefacebook(message: args!, result: result)
@@ -82,7 +61,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
         }
         else if(call.method.elementsEqual(_methodTelegramShare)){
             let args = call.arguments as? Dictionary<String,Any>
-            shareToTelegram(message: args!["msg"] as! String, result: result )
+            shareToTelegram(message: args!["msg"] as! String, result: result)
         }
         else if (call.method.elementsEqual(_methodEmail)){
             let args = call.arguments as? Dictionary<String,Any>
@@ -96,6 +75,10 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
                 sendEmail(withRecipient: recipients, withCcRecipient: ccrecipients, withBccRecipient: bccrecipients, withBody: body, withSubject: subject, withisHTML: isHTML)
             }
         }
+        else if (call.method.elementsEqual(_methodSMSShare)){
+            let args = call.arguments as? Dictionary<String,Any>
+            shareToSMS(message: args!['msg'] as! String, result: result)
+        }
         else{
             let args = call.arguments as? Dictionary<String,Any>
             systemShare(message: args!["msg"] as! String,result: result)
@@ -106,61 +89,15 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
     func shareWhatsApp(message:String, imageUrl:String,type:String,result: @escaping FlutterResult)  {
         // @ For ios
         // we can't set both if you pass image then text will ignore
-        var whatsURL = ""
-        if(imageUrl==""){
-            whatsURL = "whatsapp://send?text=\(message)"
-        }else{
-            whatsURL = "whatsapp://app"
-        }
-        
+        var whatsURL = "whatsapp://send?text=\(message)"
         var characterSet = CharacterSet.urlQueryAllowed
         characterSet.insert(charactersIn: "?&")
         let whatsAppURL  = NSURL(string: whatsURL.addingPercentEncoding(withAllowedCharacters: characterSet)!)
         if UIApplication.shared.canOpenURL(whatsAppURL! as URL)
         {
-            if(imageUrl==""){
-                //mean user did not pass image url  so just got with text message
-                result("Sucess");
-                UIApplication.shared.openURL(whatsAppURL! as URL)
-                
-            }
-            else{
-                //this is whats app work around so will open system share and exclude other share types
-                let viewController = UIApplication.shared.delegate?.window??.rootViewController
-                let urlData:Data
-                let filePath:URL
-                if(type=="image"){
-                    let image = UIImage(named: imageUrl)
-                    if(image==nil){
-                        result("File format not supported Please check the file.")
-                        return;
-                    }
-                    //urlData=UIImageJPEGRepresentation(image!, 1.0)!
-                    urlData = image!.jpegData(compressionQuality: 1.0)!
-                    filePath=URL(fileURLWithPath:NSHomeDirectory()).appendingPathComponent("Documents/whatsAppTmp.wai")
-                }else{
-                    filePath=URL(fileURLWithPath:NSTemporaryDirectory()).appendingPathComponent("video.m4v")
-                    urlData = NSData(contentsOf: URL(fileURLWithPath: imageUrl))! as Data
-                }
-                
-                let tempFile = filePath
-                do{
-                    try urlData.write(to: tempFile, options: .atomic)
-                    // image to be share
-                    let imageToShare = [tempFile]
-                    
-                    let activityVC = UIActivityViewController(activityItems: imageToShare, applicationActivities: nil)
-                    // we want to exlude most of the things so developer can see whatsapp only on system share sheet
-                    activityVC.excludedActivityTypes = [UIActivity.ActivityType.airDrop,UIActivity.ActivityType.message, UIActivity.ActivityType.mail,UIActivity.ActivityType.postToTwitter,UIActivity.ActivityType.postToWeibo,UIActivity.ActivityType.print,UIActivity.ActivityType.openInIBooks,UIActivity.ActivityType.postToFlickr,UIActivity.ActivityType.postToFacebook,UIActivity.ActivityType.addToReadingList,UIActivity.ActivityType.copyToPasteboard,UIActivity.ActivityType.postToFacebook]
-                    
-                    viewController!.present(activityVC, animated: true, completion: nil)
-                    result("Sucess");
-                    
-                }catch{
-                    print(error)
-                }
-            }
-            
+            //mean user did not pass image url  so just got with text message
+            result("Sucess");
+            UIApplication.shared.openURL(whatsAppURL! as URL)            
         }
         else
         {
@@ -168,41 +105,6 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
         }
     }
     
-    
-    // Send whatsapp personal message
-    // @ message
-    // @ phone with contry code.
-    func shareWhatsAppPersonal(message:String, phoneNumber:String,result: @escaping FlutterResult)  {
-        
-        let whatsURL = "whatsapp://send?phone=\(phoneNumber)&text=\(message)"
-        var characterSet = CharacterSet.urlQueryAllowed
-        characterSet.insert(charactersIn: "?&")
-        let whatsAppURL  = NSURL(string: whatsURL.addingPercentEncoding(withAllowedCharacters: characterSet)!)
-        if UIApplication.shared.canOpenURL(whatsAppURL! as URL)
-        {
-            UIApplication.shared.openURL(whatsAppURL! as URL)
-            result("Sucess");
-        }else{
-            result(FlutterError(code: "Not found", message: "WhatsApp is not found", details: "WhatsApp not intalled or Check url scheme."));
-        }
-    }
-    
-    func shareWhatsApp4Biz(message:String, result: @escaping FlutterResult)  {
-        let whatsApp = "https://wa.me/?text=\(message)"
-        var characterSet = CharacterSet.urlQueryAllowed
-        characterSet.insert(charactersIn: "?&")
-        
-        let whatsAppURL  = NSURL(string: whatsApp.addingPercentEncoding(withAllowedCharacters: characterSet)!)
-        if UIApplication.shared.canOpenURL(whatsAppURL! as URL)
-        {
-            result("Sucess");
-            UIApplication.shared.openURL(whatsAppURL! as URL)
-        }
-        else
-        {
-            result(FlutterError(code: "Not found", message: "WhatsAppBusiness is not found", details: "WhatsAppBusiness not intalled or Check url scheme."));
-        }
-    }
     // share facebook
     // params
     // @ map conting meesage and url
@@ -274,18 +176,17 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
         }
         
     }
+
     //share via telegram
     //@ text that you want to share.
     func shareToTelegram(message: String,result: @escaping FlutterResult )
     {
         let telegram = "tg://msg?text=\(message)"
-        var characterSet = CharacterSet.urlQueryAllowed
-        characterSet.insert(charactersIn: "?&")
-        let telegramURL  = NSURL(string: telegram.addingPercentEncoding(withAllowedCharacters: characterSet)!)
-        if UIApplication.shared.canOpenURL(telegramURL! as URL)
+        let telegramURL  = URL(string: telegram.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!)
+        if UIApplication.shared.canOpenURL(telegramURL!)
         {
             result("Sucess");
-            UIApplication.shared.openURL(telegramURL! as URL)
+            UIApplication.shared.openURL(telegramURL!)
         }
         else
         {
@@ -379,20 +280,19 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
             self.result?("Mail services are not available")
         }
     }
-    
-    //Facebook delegate methods
-    public func sharer(_ sharer: Sharing, didCompleteWithResults results: [String : Any]) {
-        print("Share: Success")
-        
-    }
-    
-    public func sharer(_ sharer: Sharing, didFailWithError error: Error) {
-        print("Share: Fail")
-        
-    }
-    
-    public func sharerDidCancel(_ sharer: Sharing) {
-        print("Share: Cancel")
+
+    func shareToSMS(message:String, result: @escaping FlutterResult) {
+        let sms = "sms:?&body=\(message)";
+        let smsURL = URL(string: sms.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!)
+        if UIApplication.shared.canOpenURL(smsURL!)
+        {
+            result("Sucess");
+            UIApplication.shared.openURL(smsURL!)
+        }
+        else
+        {
+            result(FlutterError(code: "Not found", message: "cannot find Sms app", details: "cannot find Sms app"));
+        }
     }
 }
 
@@ -400,5 +300,19 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin, SharingDelegate
 extension SwiftFlutterShareMePlugin: MFMailComposeViewControllerDelegate{
     public func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
         UIApplication.shared.keyWindow?.rootViewController?.dismiss(animated: true, completion: nil)
+    }
+}
+
+extension SwiftFacebookMessengerSharePlugin: SharingDelegate {
+    public func sharer(_ sharer: Sharing, didCompleteWithResults results: [String : Any]) {
+        self.result?(succeeded)
+    }
+    
+    public func sharer(_ sharer: Sharing, didFailWithError error: Error) {
+        self.result?(failedWithMessage(error.localizedDescription))
+    }
+    
+    public func sharerDidCancel(_ sharer: Sharing) {
+        self.result?(cancelled)
     }
 }

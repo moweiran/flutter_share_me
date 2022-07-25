@@ -1,6 +1,5 @@
 package zhuoyuan.li.fluttershareme;
 
-
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -44,8 +43,6 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
 public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, ActivityAware {
 
     final private static String _methodWhatsApp = "whatsapp_share";
-    final private static String _methodWhatsAppPersonal = "whatsapp_personal";
-    final private static String _methodWhatsAppBusiness = "whatsapp_business_share";
     final private static String _methodFaceBook = "facebook_share";
     final private static String _methodMessenger = "messenger_share";
     final private static String _methodTwitter = "twitter_share";
@@ -53,7 +50,7 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
     final private static String _methodInstagramShare = "instagram_share";
     final private static String _methodTelegramShare = "telegram_share";
     final private static String _methodEmailShare = "email_share";
-
+    final private static String _methodSMSShare = "sms_share";
 
     private Activity activity;
     private static CallbackManager callbackManager;
@@ -119,18 +116,7 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
                 break;
             case _methodWhatsApp:
                 msg = call.argument("msg");
-                url = call.argument("url");
-                shareWhatsApp(url, msg, result, false);
-                break;
-            case _methodWhatsAppBusiness:
-                msg = call.argument("msg");
-                url = call.argument("url");
-                shareWhatsApp(url, msg, result, true);
-                break;
-            case _methodWhatsAppPersonal:
-                msg = call.argument("msg");
-                String phoneNumber = call.argument("phoneNumber");
-                shareWhatsAppPersonal(msg, phoneNumber, result);
+                shareWhatsApp(msg, result);
                 break;
             case _methodSystemShare:
                 msg = call.argument("msg");
@@ -151,7 +137,11 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
                 bccrecipients = call.argument("bccrecipients");
                 body = call.argument("body");
                 subject = call.argument("subject");
-                shareEmail(recipients,ccrecipients,bccrecipients,subject,body,result);
+                shareEmail(recipients, ccrecipients, bccrecipients, subject, body, result);
+            case _methodSMSShare:
+                msg = call.argument("msg");
+                shareToSMS(msg, result);
+                break;
             default:
                 result.notImplemented();
                 break;
@@ -186,13 +176,10 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
 
     private void shareToTwitter(String url, String msg, Result result) {
         try {
-            TweetComposer.Builder builder = new TweetComposer.Builder(activity)
-                    .text(msg);
-            if (url != null && url.length() > 0) {
-                builder.url(new URL(url));
-            }
-
-            builder.show();
+            String urlScheme = "http://www.twitter.com/intent/tweet?text=" + msg + url;
+            Intent twitterIntent = new Intent(Intent.ACTION_VIEW);
+            twitterIntent.setData(Uri.parse(urlScheme));
+            activity.startActivity(twitterIntent);
             result.success("success");
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -228,8 +215,8 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
         });
 
         ShareLinkContent linkContent = new ShareLinkContent.Builder()
-            .setContentUrl(Uri.parse(url))
-            .build();
+                .setContentUrl(Uri.parse(url))
+                .build();
 
         if (ShareDialog.canShow(ShareLinkContent.class)) {
             shareDialog.show(linkContent);
@@ -282,38 +269,26 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
      * @param result             Result
      * @param shareToWhatsAppBiz boolean
      */
-    private void shareWhatsApp(String imagePath, String msg, Result result, boolean shareToWhatsAppBiz) {
+    private void shareWhatsApp(String msg, Result result) {
         try {
             Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
-            
-            whatsappIntent.setPackage(shareToWhatsAppBiz ? "com.whatsapp.w4b" : "com.whatsapp");
+            whatsappIntent.setType("text/plain");
+            whatsappIntent.setPackage("com.whatsapp");
             whatsappIntent.putExtra(Intent.EXTRA_TEXT, msg);
-            // if the url is the not empty then get url of the file and share
-            if (!TextUtils.isEmpty(imagePath)) {
-                whatsappIntent.setType("*/*");
-                System.out.print(imagePath+"url is not empty");
-                File file = new File(imagePath);
-                Uri fileUri = FileProvider.getUriForFile(activity, activity.getApplicationContext().getPackageName() + ".provider", file);
-                whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                whatsappIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
-                whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            }
-            else {
-                whatsappIntent.setType("text/plain");
-            }
             activity.startActivity(whatsappIntent);
             result.success("success");
         } catch (Exception var9) {
             result.error("error", var9.toString(), "");
         }
     }
-      /**
+
+    /**
      * share to telegram
      *
-     * @param msg                String
-     * @param result             Result
+     * @param msg    String
+     * @param result Result
      */
-    
+
     private void shareToTelegram(String msg, Result result) {
         try {
             Intent telegramIntent = new Intent(Intent.ACTION_SEND);
@@ -330,26 +305,6 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
             result.error("error", var9.toString(), "");
         }
     }
-    /**
-     * share whatsapp message to personal number
-     *
-     * @param msg         String
-     * @param phoneNumber String with country code
-     * @param result
-     */
-    private void shareWhatsAppPersonal(String msg, String phoneNumber, Result result) {
-        String url = null;
-        try {
-            url = "https://api.whatsapp.com/send?phone=" + phoneNumber + "&text=" + URLEncoder.encode(msg, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        Intent i = new Intent(Intent.ACTION_VIEW);
-        i.setPackage("com.whatsapp");
-        i.setData(Uri.parse(url));
-        activity.startActivity(i);
-        result.success("success");
-    }
 
     /**
      * share to instagram
@@ -361,12 +316,13 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
     private void shareInstagramStory(String url, String fileType, Result result) {
         if (instagramInstalled()) {
             File file = new File(url);
-            Uri fileUri = FileProvider.getUriForFile(activity, activity.getApplicationContext().getPackageName() + ".provider", file);
+            Uri fileUri = FileProvider.getUriForFile(activity,
+                    activity.getApplicationContext().getPackageName() + ".provider", file);
 
             Intent instagramIntent = new Intent(Intent.ACTION_SEND);
-            if(fileType.equals("image"))
+            if (fileType.equals("image"))
                 instagramIntent.setType("image/*");
-            else if(fileType.equals("video"))
+            else if (fileType.equals("video"))
                 instagramIntent.setType("video/*");
             instagramIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
             instagramIntent.setPackage("com.instagram.android");
@@ -385,14 +341,15 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
     /**
      * share on Email
      *
-     * @param recipients ArrayList<String>
-     * @param ccrecipients ArrayList<String>
+     * @param recipients    ArrayList<String>
+     * @param ccrecipients  ArrayList<String>
      * @param bccrecipients ArrayList<String>
-     * @param subject    String
-     * @param body       String
-     * @param result     Result
+     * @param subject       String
+     * @param body          String
+     * @param result        Result
      */
-    private void shareEmail(ArrayList<String> recipients, ArrayList<String> ccrecipients,ArrayList<String> bccrecipients,String subject,String body,Result result){
+    private void shareEmail(ArrayList<String> recipients, ArrayList<String> ccrecipients,
+            ArrayList<String> bccrecipients, String subject, String body, Result result) {
 
         Intent shareIntent = new Intent(Intent.ACTION_SENDTO, Uri.fromParts(
                 "mailto", "", null));
@@ -405,6 +362,30 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
             activity.startActivity(Intent.createChooser(shareIntent, "Send email using..."));
         } catch (android.content.ActivityNotFoundException ex) {
             result.success("Mail services are not available");
+        }
+    }
+
+    /**
+     * share to sms
+     *
+     * @param msg    String
+     * @param result Result
+     */
+
+    private void shareToSMS(String msg, Result result) {
+        try {
+            Intent smsIntent = new Intent(Intent.ACTION_SEND);
+            smsIntent.setType("vnd.android-dir/mms-sms");
+            smsIntent.addCategory(Intent.CATEGORY_DEFAULT);
+            smsIntent.putExtra("sms_body",  msg);
+            try {
+                activity.startActivity(smsIntent);
+                result.success("true");
+            } catch (Exception ex) {
+                result.success("false:Telegram app is not installed on your device");
+            }
+        } catch (Exception var9) {
+            result.error("error", var9.toString(), "");
         }
     }
 
@@ -428,7 +409,7 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
 
     }
 
-    ///Utils methods
+    /// Utils methods
     private boolean instagramInstalled() {
         try {
             if (activity != null) {
@@ -442,6 +423,6 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
         } catch (PackageManager.NameNotFoundException e) {
             return false;
         }
-//        return false;
+        // return false;
     }
 }

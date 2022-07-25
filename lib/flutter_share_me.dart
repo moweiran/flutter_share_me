@@ -1,5 +1,5 @@
 import 'package:flutter/services.dart';
-
+import 'dart:io';
 import 'file_type.dart';
 
 //export file type enum
@@ -9,8 +9,6 @@ class FlutterShareMe {
   final MethodChannel _channel = const MethodChannel('flutter_share_me');
 
   static const String _methodWhatsApp = 'whatsapp_share';
-  static const String _methodWhatsAppPersonal = 'whatsapp_personal';
-  static const String _methodWhatsAppBusiness = 'whatsapp_business_share';
   static const String _methodFaceBook = 'facebook_share';
   static const String _methodMessenger = 'messenger_share';
   static const String _methodTwitter = 'twitter_share';
@@ -18,48 +16,16 @@ class FlutterShareMe {
   static const String _methodSystemShare = 'system_share';
   static const String _methodTelegramShare = 'telegram_share';
   static const String _methodEmailShare = 'email_share';
+  static const String _methodSMSShare = 'sms_share';
 
   ///share to WhatsApp
-  /// [imagePath] is local image
-  /// [phoneNumber] enter phone number with counry code
-  /// For ios
-  /// If include image then text params will be ingored as there is no current way in IOS share both at the same.
-  Future<String?> shareToWhatsApp(
-      {String msg = '',
-      String imagePath = '',
-      FileType? fileType = FileType.image}) async {
+  /// [msg] message text you want on whatsapp
+  Future<String?> shareToWhatsApp({String msg = ''}) async {
     final Map<String, dynamic> arguments = <String, dynamic>{};
     arguments.putIfAbsent('msg', () => msg);
-    arguments.putIfAbsent('url', () => imagePath);
-    if (fileType == FileType.image) {
-      arguments.putIfAbsent('fileType', () => 'image');
-    } else {
-      arguments.putIfAbsent('fileType', () => 'video');
-    }
-
     String? result;
     try {
       result = await _channel.invokeMethod<String>(_methodWhatsApp, arguments);
-    } catch (e) {
-      return e.toString();
-    }
-
-    return result;
-  }
-
-  ///share to WhatsApp
-  /// [phoneNumber] phone number with counry code
-  /// [msg] message text you want on whatsapp
-  Future<String?> shareWhatsAppPersonalMessage(
-      {required String message, required String phoneNumber}) async {
-    final Map<String, dynamic> arguments = <String, dynamic>{};
-    arguments.putIfAbsent('msg', () => message);
-    arguments.putIfAbsent('phoneNumber', () => phoneNumber);
-
-    String? result;
-    try {
-      result = await _channel.invokeMethod<String>(
-          _methodWhatsAppPersonal, arguments);
     } catch (e) {
       return e.toString();
     }
@@ -79,27 +45,6 @@ class FlutterShareMe {
     } catch (e) {
       return e.toString();
     }
-    return result;
-  }
-
-  ///share to WhatsApp4Biz
-  ///[imagePath] is local image
-  /// For ios
-  /// If include image then text params will be ingored as there is no current way in IOS share both at the same.
-  Future<String?> shareToWhatsApp4Biz(
-      {String msg = '', String? imagePath = ''}) async {
-    final Map<String, dynamic> arguments = <String, dynamic>{};
-
-    arguments.putIfAbsent('msg', () => msg);
-    arguments.putIfAbsent('url', () => imagePath);
-    String? result;
-    try {
-      result = await _channel.invokeMethod<String>(
-          _methodWhatsAppBusiness, arguments);
-    } catch (e) {
-      return 'false';
-    }
-
     return result;
   }
 
@@ -205,5 +150,27 @@ class FlutterShareMe {
       return e.toString();
     }
     return result;
+  }
+
+  Future<String?> shareSms(String msg, {String? url}) async {
+    Map<String, dynamic>? args;
+    if (Platform.isIOS) {
+      if (url == null) {
+        args = <String, dynamic>{
+          "msg": msg,
+        };
+      } else {
+        args = <String, dynamic>{
+          "msg": msg + " ",
+          "urlLink": Uri.parse(url).toString()
+        };
+      }
+    } else if (Platform.isAndroid) {
+      args = <String, dynamic>{
+        "msg": msg + (url ?? ''),
+      };
+    }
+    final String? version = await _channel.invokeMethod(_methodSMSShare, args);
+    return version;
   }
 }

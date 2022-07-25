@@ -10,16 +10,16 @@ enum Share {
   messenger,
   twitter,
   whatsapp,
-  whatsapp_personal,
-  whatsapp_business,
   share_system,
   share_instagram,
   share_telegram
 }
 
-void main() => runApp(MyApp());
+void main() => runApp(const MyApp());
 
 class MyApp extends StatefulWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   _MyAppState createState() => _MyAppState();
 }
@@ -36,27 +36,21 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Plugin example app'),
         ),
-        body: Container(
+        body: SizedBox(
           width: double.infinity,
           child: Column(
             children: <Widget>[
               const SizedBox(height: 30),
-              ElevatedButton(onPressed: pickImage, child: Text('Pick Image')),
-              ElevatedButton(onPressed: pickVideo, child: Text('Pick Video')),
+              ElevatedButton(
+                  onPressed: pickImage, child: const Text('Pick Image')),
+              ElevatedButton(
+                  onPressed: pickVideo, child: const Text('Pick Video')),
               ElevatedButton(
                   onPressed: () => onButtonTap(Share.twitter),
                   child: const Text('share to twitter')),
               ElevatedButton(
                 onPressed: () => onButtonTap(Share.whatsapp),
                 child: const Text('share to WhatsApp'),
-              ),
-              ElevatedButton(
-                onPressed: () => onButtonTap(Share.whatsapp_business),
-                child: const Text('share to WhatsApp Business'),
-              ),
-              ElevatedButton(
-                onPressed: () => onButtonTap(Share.whatsapp_personal),
-                child: const Text('share to WhatsApp Personal'),
               ),
               ElevatedButton(
                 onPressed: () => onButtonTap(Share.facebook),
@@ -125,23 +119,10 @@ class _MyAppState extends State<MyApp> {
         response = await flutterShareMe.shareToTwitter(url: url, msg: msg);
         break;
       case Share.whatsapp:
-        if (file != null) {
-          response = await flutterShareMe.shareToWhatsApp(
-              imagePath: file!.path,
-              fileType: videoEnable ? FileType.video : FileType.image);
-        } else {
-          response = await flutterShareMe.shareToWhatsApp(msg: msg);
-        }
-        break;
-      case Share.whatsapp_business:
         response = await flutterShareMe.shareToWhatsApp(msg: msg);
         break;
       case Share.share_system:
         response = await flutterShareMe.shareToSystem(msg: msg);
-        break;
-      case Share.whatsapp_personal:
-        response = await flutterShareMe.shareWhatsAppPersonalMessage(
-            message: msg, phoneNumber: 'phone-number-with-country-code');
         break;
       case Share.share_instagram:
         response = await flutterShareMe.shareToInstagram(
