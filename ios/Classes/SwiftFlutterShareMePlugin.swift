@@ -77,7 +77,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
         }
         else if (call.method.elementsEqual(_methodSMSShare)){
             let args = call.arguments as? Dictionary<String,Any>
-            shareToSMS(message: args!['msg'] as! String, result: result)
+            shareToSMS(message: args!["msg"] as! String, result: result)
         }
         else{
             let args = call.arguments as? Dictionary<String,Any>
@@ -303,7 +303,7 @@ extension SwiftFlutterShareMePlugin: MFMailComposeViewControllerDelegate{
     }
 }
 
-extension SwiftFacebookMessengerSharePlugin: SharingDelegate {
+extension SwiftFlutterShareMePlugin: SharingDelegate {
     public func sharer(_ sharer: Sharing, didCompleteWithResults results: [String : Any]) {
         self.result?(succeeded)
     }

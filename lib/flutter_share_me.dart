@@ -1,5 +1,4 @@
 import 'package:flutter/services.dart';
-import 'dart:io';
 import 'file_type.dart';
 
 //export file type enum
@@ -152,24 +151,9 @@ class FlutterShareMe {
     return result;
   }
 
-  Future<String?> shareSms(String msg, {String? url}) async {
+  Future<String?> shareSms(String msg) async {
     Map<String, dynamic>? args;
-    if (Platform.isIOS) {
-      if (url == null) {
-        args = <String, dynamic>{
-          "msg": msg,
-        };
-      } else {
-        args = <String, dynamic>{
-          "msg": msg + " ",
-          "urlLink": Uri.parse(url).toString()
-        };
-      }
-    } else if (Platform.isAndroid) {
-      args = <String, dynamic>{
-        "msg": msg + (url ?? ''),
-      };
-    }
+    args = <String, dynamic>{'msg': msg};
     final String? version = await _channel.invokeMethod(_methodSMSShare, args);
     return version;
   }
