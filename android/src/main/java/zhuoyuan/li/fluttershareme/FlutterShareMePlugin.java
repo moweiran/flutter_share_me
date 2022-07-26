@@ -148,6 +148,7 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
                 body = call.argument("body");
                 subject = call.argument("subject");
                 shareEmail(recipients, ccrecipients, bccrecipients, subject, body, result);
+                break;
             case _methodSMSShare:
                 msg = call.argument("msg");
                 shareToSMS(msg, result);
@@ -373,6 +374,7 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
         shareIntent.putExtra(Intent.EXTRA_BCC, bccrecipients);
         try {
             activity.startActivity(Intent.createChooser(shareIntent, "Send email using..."));
+            result.success("Success");
         } catch (android.content.ActivityNotFoundException ex) {
             result.success("Mail services are not available");
         }
