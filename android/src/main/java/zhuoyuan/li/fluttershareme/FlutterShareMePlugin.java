@@ -2,8 +2,11 @@ package zhuoyuan.li.fluttershareme;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
@@ -26,6 +29,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
@@ -51,6 +58,7 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
     final private static String _methodTelegramShare = "telegram_share";
     final private static String _methodEmailShare = "email_share";
     final private static String _methodSMSShare = "sms_share";
+    final private static String _methodCheckInstalledApps = "checkInstalledApps";
 
     private Activity activity;
     private static CallbackManager callbackManager;
@@ -61,6 +69,7 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
     private ArrayList<String> bccrecipients;
     private String subject;
     private String body;
+    private Context context;
 
     /**
      * Plugin registration.
@@ -73,6 +82,7 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
 
     @Override
     public void onAttachedToEngine(FlutterPluginBinding binding) {
+        context = binding.getApplicationContext();
         onAttachedToEngine(binding.getBinaryMessenger());
     }
 
@@ -142,6 +152,9 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
                 msg = call.argument("msg");
                 shareToSMS(msg, result);
                 break;
+            case _methodCheckInstalledApps:
+                checkInstalledApps(result);
+                break;
             default:
                 result.notImplemented();
                 break;
@@ -156,10 +169,11 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
      */
     private void shareSystem(Result result, String msg) {
         try {
-            Intent textIntent = new Intent("android.intent.action.SEND");
+            Intent textIntent = new Intent(Intent.ACTION_SEND);
             textIntent.setType("text/plain");
-            textIntent.putExtra("android.intent.extra.TEXT", msg);
-            activity.startActivity(Intent.createChooser(textIntent, "Share to"));
+            textIntent.putExtra(Intent.EXTRA_TEXT, msg);
+            textIntent.putExtra(Intent.EXTRA_SUBJECT, "Share to");
+            activity.startActivity(Intent.createChooser(textIntent, null));
             result.success("success");
         } catch (Exception var7) {
             result.error("error", var7.toString(), "");
@@ -181,8 +195,8 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
             twitterIntent.setData(Uri.parse(urlScheme));
             activity.startActivity(twitterIntent);
             result.success("success");
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+        } catch (Exception var7) {
+            result.error("error", var7.toString(), "");
         }
     }
 
@@ -349,7 +363,7 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
      * @param result        Result
      */
     private void shareEmail(ArrayList<String> recipients, ArrayList<String> ccrecipients,
-            ArrayList<String> bccrecipients, String subject, String body, Result result) {
+                            ArrayList<String> bccrecipients, String subject, String body, Result result) {
 
         Intent shareIntent = new Intent(Intent.ACTION_SENDTO, Uri.fromParts(
                 "mailto", "", null));
@@ -374,10 +388,11 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
 
     private void shareToSMS(String msg, Result result) {
         try {
-            Intent smsIntent = new Intent(Intent.ACTION_SEND);
+            Intent smsIntent = new Intent(Intent.ACTION_SENDTO);
             smsIntent.setType("vnd.android-dir/mms-sms");
             smsIntent.addCategory(Intent.CATEGORY_DEFAULT);
-            smsIntent.putExtra("sms_body",  msg);
+            smsIntent.putExtra("sms_body", msg);
+            smsIntent.setData(Uri.parse("sms:"));
             try {
                 activity.startActivity(smsIntent);
                 result.success("true");
@@ -389,9 +404,57 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
         }
     }
 
+    private void checkInstalledApps(Result result) {
+        try {
+            HashMap<String, Boolean> apps = new HashMap<>();
+            apps.put("instagram", false);
+            apps.put("facebook", false);
+            apps.put("twitter", false);
+            apps.put("whatsapp", false);
+            apps.put("telegram", false);
+            apps.put("messenger", false);
+
+            PackageManager packageManager = context.getPackageManager();
+            List<ApplicationInfo> packages = packageManager.getInstalledApplications(PackageManager.GET_META_DATA);
+            Intent intent = new Intent(Intent.ACTION_SENDTO);
+            intent.addCategory(Intent.CATEGORY_DEFAULT);
+            intent.setType("vnd.android-dir/mms-sms");
+            intent.setData(Uri.parse("sms:"));
+
+            List<ResolveInfo> resolvedActivities = packageManager.queryIntentActivities(intent, 0);
+            apps.put("sms", !resolvedActivities.isEmpty());
+
+            for (ApplicationInfo app : packages) {
+                System.out.println("--------------------success " + app.packageName);
+                if (app.packageName.equals("com.instagram.android")) {
+                    apps.put("instagram", true);
+                }
+                if (app.packageName.equals("com.facebook.katana")) {
+                    apps.put("facebook", true);
+                }
+                if (app.packageName.equals("com.twitter.android")) {
+                    apps.put("twitter", true);
+                }
+                if (app.packageName.equals("com.whatsapp")) {
+                    apps.put("whatsapp", true);
+                }
+                if (app.packageName.equals("org.telegram.messenger")) {
+                    apps.put("telegram", true);
+                }
+                if (app.packageName.equals("com.facebook.orca")) {
+                    apps.put("messenger", true);
+                }
+            }
+            result.success(apps);
+        } catch (Exception var7) {
+            result.error("error", var7.toString(), "");
+        }
+    }
+
     @Override
     public void onAttachedToActivity(ActivityPluginBinding binding) {
         activity = binding.getActivity();
+
     }
 
     @Override

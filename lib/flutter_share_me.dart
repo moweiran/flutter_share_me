@@ -16,6 +16,7 @@ class FlutterShareMe {
   static const String _methodTelegramShare = 'telegram_share';
   static const String _methodEmailShare = 'email_share';
   static const String _methodSMSShare = 'sms_share';
+  static const String _methodCheckInstalledApps = 'checkInstalledApps';
 
   ///share to WhatsApp
   /// [msg] message text you want on whatsapp
@@ -156,5 +157,10 @@ class FlutterShareMe {
     args = <String, dynamic>{'msg': msg};
     final String? version = await _channel.invokeMethod(_methodSMSShare, args);
     return version;
+  }
+
+  Future<Map?> checkInstalledAppsForShare() async {
+    final Map? apps = await _channel.invokeMethod(_methodCheckInstalledApps);
+    return apps;
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_share_me/flutter_share_me.dart';
 import 'package:image_picker/image_picker.dart';
@@ -11,10 +12,11 @@ enum Share {
   twitter,
   whatsapp,
   share_system,
-  share_instagram,
+  // share_instagram,
   share_telegram,
   email,
   sms,
+  checkInstalled,
 }
 
 void main() => runApp(const MyApp());
@@ -43,13 +45,18 @@ class _MyAppState extends State<MyApp> {
           child: Column(
             children: <Widget>[
               const SizedBox(height: 30),
+              // ElevatedButton(
+              //   onPressed: pickImage,
+              //   child: const Text('Pick Image'),
+              // ),
+              // ElevatedButton(
+              //   onPressed: pickVideo,
+              //   child: const Text('Pick Video'),
+              // ),
               ElevatedButton(
-                  onPressed: pickImage, child: const Text('Pick Image')),
-              ElevatedButton(
-                  onPressed: pickVideo, child: const Text('Pick Video')),
-              ElevatedButton(
-                  onPressed: () => onButtonTap(Share.twitter),
-                  child: const Text('share to twitter')),
+                onPressed: () => onButtonTap(Share.twitter),
+                child: const Text('share to twitter'),
+              ),
               ElevatedButton(
                 onPressed: () => onButtonTap(Share.whatsapp),
                 child: const Text('share to WhatsApp'),
@@ -62,10 +69,10 @@ class _MyAppState extends State<MyApp> {
                 onPressed: () => onButtonTap(Share.messenger),
                 child: const Text('share to  Messenger'),
               ),
-              ElevatedButton(
-                onPressed: () => onButtonTap(Share.share_instagram),
-                child: const Text('share to Instagram'),
-              ),
+              // ElevatedButton(
+              //   onPressed: () => onButtonTap(Share.share_instagram),
+              //   child: const Text('share to Instagram'),
+              // ),
               ElevatedButton(
                 onPressed: () => onButtonTap(Share.share_telegram),
                 child: const Text('share to Telegram'),
@@ -82,6 +89,10 @@ class _MyAppState extends State<MyApp> {
                 onPressed: () => onButtonTap(Share.sms),
                 child: const Text('share to sms'),
               ),
+              ElevatedButton(
+                onPressed: () => onButtonTap(Share.checkInstalled),
+                child: const Text('Check Installed'),
+              )
             ],
           ),
         ),
@@ -134,11 +145,12 @@ class _MyAppState extends State<MyApp> {
       case Share.share_system:
         response = await flutterShareMe.shareToSystem(msg: msg);
         break;
-      case Share.share_instagram:
-        response = await flutterShareMe.shareToInstagram(
-            filePath: file!.path,
-            fileType: videoEnable ? FileType.video : FileType.image);
-        break;
+      // case Share.share_instagram:
+      //   response = await flutterShareMe.shareToInstagram(
+      //     filePath: file!.path,
+      //     fileType: videoEnable ? FileType.video : FileType.image,
+      //   );
+      //   break;
       case Share.share_telegram:
         response = await flutterShareMe.shareToTelegram(msg: msg);
         break;
@@ -151,6 +163,13 @@ class _MyAppState extends State<MyApp> {
           subject: 'subject',
           isHTML: true,
         );
+        break;
+      case Share.checkInstalled:
+        final Map<dynamic, dynamic>? checkInstallResults =
+            await flutterShareMe.checkInstalledAppsForShare();
+        if (kDebugMode) {
+          print(checkInstallResults);
+        }
         break;
     }
     debugPrint(response);

@@ -17,6 +17,14 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
     let _methodTelegramShare = "telegram_share";
     let _methodEmail = "email_share";
     let _methodSMSShare = "sms_share";
+    let _methodCheckInstalledApps = "checkInstalledApps";
+    
+    private func failedWithMessage(_ message: String) -> [String: Any] {
+        return ["code": 0, "message": message]
+    }
+    
+    private let succeeded = ["code": 1]
+    private let cancelled = ["code": -1]
     
     var result: FlutterResult?
     var documentInteractionController: UIDocumentInteractionController?
@@ -33,15 +41,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
         self.result = result
         if(call.method.elementsEqual(_methodWhatsApp)){
             let args = call.arguments as? Dictionary<String,Any>
-            
-            if args!["url"] as! String == "" {
-                // if don't pass url then pass blank so if can strat normal whatsapp
-                shareWhatsApp(message: args!["msg"] as! String,imageUrl: "",type: args!["fileType"] as! String,result: result)
-            }else{
-                // if user pass url then use that
-                shareWhatsApp(message: args!["msg"] as! String,imageUrl: args!["url"] as! String,type: args!["fileType"] as! String,result: result)
-            }
-            
+            shareWhatsApp(message: args!["msg"] as! String, result: result)
         }
         else if(call.method.elementsEqual(_methodFaceBook)){
             let args = call.arguments as? Dictionary<String,Any>
@@ -64,7 +64,6 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
             shareToTelegram(message: args!["msg"] as! String, result: result)
         }
         else if (call.method.elementsEqual(_methodEmail)){
-            let args = call.arguments as? Dictionary<String,Any>
             if let arguments = call.arguments as? [String:Any] {
                 let recipients = arguments["recipients"] as? [String] ?? []
                 let ccrecipients = arguments["ccrecipients"] as? [String] ?? []
@@ -79,6 +78,9 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
             let args = call.arguments as? Dictionary<String,Any>
             shareToSMS(message: args!["msg"] as! String, result: result)
         }
+        else if (call.method.elementsEqual(_methodCheckInstalledApps)) {
+            checkInstalledApps(result:result);
+        }
         else{
             let args = call.arguments as? Dictionary<String,Any>
             systemShare(message: args!["msg"] as! String,result: result)
@@ -86,10 +88,10 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
     }
     
     
-    func shareWhatsApp(message:String, imageUrl:String,type:String,result: @escaping FlutterResult)  {
+    func shareWhatsApp(message:String, result: @escaping FlutterResult)  {
         // @ For ios
         // we can't set both if you pass image then text will ignore
-        var whatsURL = "whatsapp://send?text=\(message)"
+        let whatsURL = "whatsapp://send?text=\(message)"
         var characterSet = CharacterSet.urlQueryAllowed
         characterSet.insert(charactersIn: "?&")
         let whatsAppURL  = NSURL(string: whatsURL.addingPercentEncoding(withAllowedCharacters: characterSet)!)
@@ -97,7 +99,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
         {
             //mean user did not pass image url  so just got with text message
             result("Sucess");
-            UIApplication.shared.openURL(whatsAppURL! as URL)            
+            UIApplication.shared.openURL(whatsAppURL! as URL)
         }
         else
         {
@@ -116,7 +118,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
         guard let url = URL(string: message["url"] as! String) else {
             preconditionFailure("URL is invalid")
         }
-
+        
         shareContent.contentURL = url
         shareContent.quote = message["msg"] as? String
         
@@ -134,18 +136,23 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
         guard let url = URL(string: message["url"] as! String) else {
             preconditionFailure("URL is invalid")
         }
-
+        
         let content = ShareLinkContent()
         content.contentURL = url
-
+        
+        share(content, result)
+    }
+    
+    private func share(_ content: SharingContent, _ result: FlutterResult) {
         let dialog = MessageDialog(content: content, delegate: self)
-
+        
         do {
             try dialog.validate()
         } catch {
+            result(failedWithMessage(error.localizedDescription))
             print(error)
         }
-
+        
         dialog.show()
     }
     
@@ -176,11 +183,10 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
         }
         
     }
-
+    
     //share via telegram
     //@ text that you want to share.
-    func shareToTelegram(message: String,result: @escaping FlutterResult )
-    {
+    func shareToTelegram(message: String,result: @escaping FlutterResult ) {
         let telegram = "tg://msg?text=\(message)"
         let telegramURL  = URL(string: telegram.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!)
         if UIApplication.shared.canOpenURL(telegramURL!)
@@ -192,9 +198,9 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
         {
             result(FlutterError(code: "Not found", message: "telegram is not found", details: "telegram not intalled or Check url scheme."));
         }
-    
+        
     }
-
+    
     //share via system native dialog
     //@ text that you want to share.
     func systemShare(message:String,result: @escaping FlutterResult)  {
@@ -223,7 +229,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
     // @ args image url
     func shareInstagram(args:Dictionary<String,Any>)  {
         let imageUrl=args["url"] as! String
-    
+        
         let image = UIImage(named: imageUrl)
         if(image==nil){
             self.result!("File format not supported Please check the file.")
@@ -260,7 +266,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
                     self.result?("Instagram app is not installed on your device")
                 }
             }
-        
+            
         } catch {
             print("Fail")
         }
@@ -280,7 +286,7 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
             self.result?("Mail services are not available")
         }
     }
-
+    
     func shareToSMS(message:String, result: @escaping FlutterResult) {
         let sms = "sms:?&body=\(message)";
         let smsURL = URL(string: sms.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!)
@@ -294,6 +300,71 @@ public class SwiftFlutterShareMePlugin: NSObject, FlutterPlugin {
             result(FlutterError(code: "Not found", message: "cannot find Sms app", details: "cannot find Sms app"));
         }
     }
+    
+    func checkInstalledApps(result: @escaping FlutterResult) {
+        var installedApps = [String:Bool]()
+        if UIApplication.shared.canOpenURL(URL(string: "instagram-stories://")!) {
+            installedApps["instagram"] = true;
+        } else {
+            installedApps["instagram"] = false;
+        }
+        if UIApplication.shared.canOpenURL(URL(string: "facebook-stories://")!) {
+            installedApps["facebook"] = true;
+        } else {
+            installedApps["facebook"] = false;
+        }
+        if UIApplication.shared.canOpenURL(URL(string: "twitter://")!) {
+            installedApps["twitter"] = true
+        } else {
+            installedApps["twitter"] = false
+        }
+        if UIApplication.shared.canOpenURL(URL(string: "sms://")!) {
+            installedApps["sms"] = true
+        } else {
+            installedApps["sms"] = false
+        }
+        if UIApplication.shared.canOpenURL(URL(string: "whatsapp://")!) {
+            installedApps["whatsapp"] = true
+        } else {
+            installedApps["whatsapp"] = false
+        }
+        if UIApplication.shared.canOpenURL(URL(string: "tg://")!) {
+            installedApps["telegram"] = true
+        } else {
+            installedApps["telegram"] = false
+        }
+        if UIApplication.shared.canOpenURL(URL(string: "fb-messenger://")!) {
+            installedApps["messenger"] = true
+        } else {
+            installedApps["messenger"] = false
+        }
+        if MFMailComposeViewController.canSendMail() {
+            installedApps["email"] = true
+        } else {
+            installedApps["email"] = false;
+        }
+        result(installedApps)
+    }
+    
+    /// START ALLOW HANDLE NATIVE FACEBOOK APP
+    public func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [AnyHashable : Any] = [:]) -> Bool {
+        var options = [UIApplication.LaunchOptionsKey: Any]()
+        for (k, value) in launchOptions {
+            let key = k as! UIApplication.LaunchOptionsKey
+            options[key] = value
+        }
+        ApplicationDelegate.shared.application(application,didFinishLaunchingWithOptions: options)
+        return true
+    }
+    
+    public func application( _ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:] ) -> Bool {
+        let processed = ApplicationDelegate.shared.application(
+            app, open: url,
+            sourceApplication: options[UIApplication.OpenURLOptionsKey.sourceApplication] as? String,
+            annotation: options[UIApplication.OpenURLOptionsKey.annotation])
+        return processed;
+    }
+    /// END ALLOW HANDLE NATIVE FACEBOOK APP
 }
 
 //MARK: MFMailComposeViewControllerDelegate
