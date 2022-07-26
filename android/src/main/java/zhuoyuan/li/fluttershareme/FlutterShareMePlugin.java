@@ -365,8 +365,7 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
     private void shareEmail(ArrayList<String> recipients, ArrayList<String> ccrecipients,
                             ArrayList<String> bccrecipients, String subject, String body, Result result) {
 
-        Intent shareIntent = new Intent(Intent.ACTION_SENDTO, Uri.fromParts(
-                "mailto", "", null));
+        Intent shareIntent = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"));
         shareIntent.putExtra(Intent.EXTRA_SUBJECT, subject);
         shareIntent.putExtra(Intent.EXTRA_TEXT, body);
         shareIntent.putExtra(Intent.EXTRA_EMAIL, recipients);
