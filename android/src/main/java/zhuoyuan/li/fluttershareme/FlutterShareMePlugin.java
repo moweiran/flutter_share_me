@@ -188,7 +188,6 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
      * @param msg    String
      * @param result Result
      */
-
     private void shareToTwitter(String url, String msg, Result result) {
         try {
             String urlScheme = "http://www.twitter.com/intent/tweet?text=" + msg + url;
@@ -209,35 +208,19 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
      * @param result Result
      */
     private void shareToFacebook(String url, String msg, Result result) {
-
-        ShareDialog shareDialog = new ShareDialog(activity);
-        // this part is optional
-        shareDialog.registerCallback(callbackManager, new FacebookCallback<Sharer.Result>() {
-            @Override
-            public void onSuccess(Sharer.Result result) {
-                System.out.println("--------------------success");
+        try {
+            ShareDialog shareDialog = new ShareDialog(activity);
+            if (ShareDialog.canShow(ShareLinkContent.class)) {
+                ShareLinkContent linkContent = new ShareLinkContent.Builder()
+                        .setContentUrl(Uri.parse(url))
+                        .setQuote(msg)
+                        .build();
+                shareDialog.show(linkContent);
+                result.success("success");
             }
-
-            @Override
-            public void onCancel() {
-                System.out.println("-----------------onCancel");
-            }
-
-            @Override
-            public void onError(FacebookException error) {
-                System.out.println("---------------onError");
-            }
-        });
-
-        ShareLinkContent linkContent = new ShareLinkContent.Builder()
-                .setContentUrl(Uri.parse(url))
-                .build();
-
-        if (ShareDialog.canShow(ShareLinkContent.class)) {
-            shareDialog.show(linkContent);
-            result.success("success");
+        } catch (Exception var9) {
+            result.error("error", var9.toString(), "");
         }
-
     }
 
     /**
@@ -248,33 +231,19 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
      * @param result Result
      */
     private void shareToMessenger(String url, String msg, Result result) {
-        ShareLinkContent content = new ShareLinkContent.Builder()
-                .setContentUrl(Uri.parse(url))
-                .setQuote(msg)
-                .build();
-        MessageDialog shareDialog = new MessageDialog(activity);
-        shareDialog.registerCallback(callbackManager, new FacebookCallback<Sharer.Result>() {
-            @Override
-            public void onSuccess(Sharer.Result result) {
-                System.out.println("--------------------success");
+        try {
+            ShareLinkContent content = new ShareLinkContent.Builder()
+                    .setContentUrl(Uri.parse(url))
+                    .setQuote(msg)
+                    .build();
+            MessageDialog shareDialog = new MessageDialog(activity);
+            if (shareDialog.canShow(content)) {
+                shareDialog.show(content);
+                result.success("success");
             }
-
-            @Override
-            public void onCancel() {
-                System.out.println("-----------------onCancel");
-            }
-
-            @Override
-            public void onError(FacebookException error) {
-                System.out.println("---------------onError");
-            }
-        });
-
-        if (shareDialog.canShow(content)) {
-            shareDialog.show(content);
-            result.success("success");
+        } catch (Exception var9) {
+            result.error("error", var9.toString(), "");
         }
-        result.error("error", "Cannot share thought messenger", "");
     }
 
     /**
@@ -310,12 +279,8 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
             telegramIntent.setType("text/plain");
             telegramIntent.setPackage("org.telegram.messenger");
             telegramIntent.putExtra(Intent.EXTRA_TEXT, msg);
-            try {
-                activity.startActivity(telegramIntent);
-                result.success("true");
-            } catch (Exception ex) {
-                result.success("false:Telegram app is not installed on your device");
-            }
+            activity.startActivity(telegramIntent);
+            result.success("true");
         } catch (Exception var9) {
             result.error("error", var9.toString(), "");
         }
@@ -365,14 +330,13 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
      */
     private void shareEmail(ArrayList<String> recipients, ArrayList<String> ccrecipients,
                             ArrayList<String> bccrecipients, String subject, String body, Result result) {
-
-        Intent shareIntent = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"));
-        shareIntent.putExtra(Intent.EXTRA_SUBJECT, subject);
-        shareIntent.putExtra(Intent.EXTRA_TEXT, body);
-        shareIntent.putExtra(Intent.EXTRA_EMAIL, recipients);
-        shareIntent.putExtra(Intent.EXTRA_CC, ccrecipients);
-        shareIntent.putExtra(Intent.EXTRA_BCC, bccrecipients);
         try {
+            Intent shareIntent = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"));
+            shareIntent.putExtra(Intent.EXTRA_SUBJECT, subject);
+            shareIntent.putExtra(Intent.EXTRA_TEXT, body);
+            shareIntent.putExtra(Intent.EXTRA_EMAIL, recipients);
+            shareIntent.putExtra(Intent.EXTRA_CC, ccrecipients);
+            shareIntent.putExtra(Intent.EXTRA_BCC, bccrecipients);
             activity.startActivity(Intent.createChooser(shareIntent, "Send email using..."));
             result.success("Success");
         } catch (android.content.ActivityNotFoundException ex) {
@@ -394,12 +358,8 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
             smsIntent.addCategory(Intent.CATEGORY_DEFAULT);
             smsIntent.putExtra("sms_body", msg);
             smsIntent.setData(Uri.parse("sms:"));
-            try {
-                activity.startActivity(smsIntent);
-                result.success("true");
-            } catch (Exception ex) {
-                result.success("false:Telegram app is not installed on your device");
-            }
+            activity.startActivity(smsIntent);
+            result.success("true");
         } catch (Exception var9) {
             result.error("error", var9.toString(), "");
         }
@@ -455,7 +415,6 @@ public class FlutterShareMePlugin implements MethodCallHandler, FlutterPlugin, A
     @Override
     public void onAttachedToActivity(ActivityPluginBinding binding) {
         activity = binding.getActivity();
-
     }
 
     @Override

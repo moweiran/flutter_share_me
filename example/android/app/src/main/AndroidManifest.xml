@@ -54,4 +54,8 @@
             android:authorities="com.facebook.app.FacebookContentProvider343254889799245"
             android:exported="false" />
     </application>
+
+    <queries>
+        <provider android:authorities="com.facebook.katana.provider.PlatformProvider" />
+    </queries>
 </manifest>

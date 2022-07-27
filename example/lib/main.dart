@@ -42,58 +42,60 @@ class _MyAppState extends State<MyApp> {
         ),
         body: SizedBox(
           width: double.infinity,
-          child: Column(
-            children: <Widget>[
-              const SizedBox(height: 30),
-              // ElevatedButton(
-              //   onPressed: pickImage,
-              //   child: const Text('Pick Image'),
-              // ),
-              // ElevatedButton(
-              //   onPressed: pickVideo,
-              //   child: const Text('Pick Video'),
-              // ),
-              ElevatedButton(
-                onPressed: () => onButtonTap(Share.twitter),
-                child: const Text('share to twitter'),
-              ),
-              ElevatedButton(
-                onPressed: () => onButtonTap(Share.whatsapp),
-                child: const Text('share to WhatsApp'),
-              ),
-              ElevatedButton(
-                onPressed: () => onButtonTap(Share.facebook),
-                child: const Text('share to  FaceBook'),
-              ),
-              ElevatedButton(
-                onPressed: () => onButtonTap(Share.messenger),
-                child: const Text('share to  Messenger'),
-              ),
-              // ElevatedButton(
-              //   onPressed: () => onButtonTap(Share.share_instagram),
-              //   child: const Text('share to Instagram'),
-              // ),
-              ElevatedButton(
-                onPressed: () => onButtonTap(Share.share_telegram),
-                child: const Text('share to Telegram'),
-              ),
-              ElevatedButton(
-                onPressed: () => onButtonTap(Share.share_system),
-                child: const Text('share to System'),
-              ),
-              ElevatedButton(
-                onPressed: () => onButtonTap(Share.email),
-                child: const Text('share to email'),
-              ),
-              ElevatedButton(
-                onPressed: () => onButtonTap(Share.sms),
-                child: const Text('share to sms'),
-              ),
-              ElevatedButton(
-                onPressed: () => onButtonTap(Share.checkInstalled),
-                child: const Text('Check Installed'),
-              )
-            ],
+          child: SingleChildScrollView(
+            child: Column(
+              children: <Widget>[
+                const SizedBox(height: 30),
+                // ElevatedButton(
+                //   onPressed: pickImage,
+                //   child: const Text('Pick Image'),
+                // ),
+                // ElevatedButton(
+                //   onPressed: pickVideo,
+                //   child: const Text('Pick Video'),
+                // ),
+                ElevatedButton(
+                  onPressed: () => onButtonTap(Share.twitter),
+                  child: const Text('share to twitter'),
+                ),
+                ElevatedButton(
+                  onPressed: () => onButtonTap(Share.whatsapp),
+                  child: const Text('share to WhatsApp'),
+                ),
+                ElevatedButton(
+                  onPressed: () => onButtonTap(Share.facebook),
+                  child: const Text('share to  FaceBook'),
+                ),
+                ElevatedButton(
+                  onPressed: () => onButtonTap(Share.messenger),
+                  child: const Text('share to  Messenger'),
+                ),
+                // ElevatedButton(
+                //   onPressed: () => onButtonTap(Share.share_instagram),
+                //   child: const Text('share to Instagram'),
+                // ),
+                ElevatedButton(
+                  onPressed: () => onButtonTap(Share.share_telegram),
+                  child: const Text('share to Telegram'),
+                ),
+                ElevatedButton(
+                  onPressed: () => onButtonTap(Share.share_system),
+                  child: const Text('share to System'),
+                ),
+                ElevatedButton(
+                  onPressed: () => onButtonTap(Share.email),
+                  child: const Text('share to email'),
+                ),
+                ElevatedButton(
+                  onPressed: () => onButtonTap(Share.sms),
+                  child: const Text('share to sms'),
+                ),
+                ElevatedButton(
+                  onPressed: () => onButtonTap(Share.checkInstalled),
+                  child: const Text('Check Installed'),
+                )
+              ],
+            ),
           ),
         ),
       ),
@@ -145,12 +147,6 @@ class _MyAppState extends State<MyApp> {
       case Share.share_system:
         response = await flutterShareMe.shareToSystem(msg: msg);
         break;
-      // case Share.share_instagram:
-      //   response = await flutterShareMe.shareToInstagram(
-      //     filePath: file!.path,
-      //     fileType: videoEnable ? FileType.video : FileType.image,
-      //   );
-      //   break;
       case Share.share_telegram:
         response = await flutterShareMe.shareToTelegram(msg: msg);
         break;
